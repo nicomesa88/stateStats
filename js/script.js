@@ -8,17 +8,31 @@ console.log('hello world')
 
 // define some global variables
 var legislatorsUrlRoot = "http://openstates.org/api/v1/legislators/",
-	stateUrlRoot = "http://openstates.org/api/v1/metadata/tx/",
+	stateUrlRoot = "http://openstates.org/api/v1/metadata/",
 	apiKey = "0e85724a8f924c6aba8bd576df364eb7",
 	legislatorParams = {
-		state: 'tx',
 		apikey: apiKey,
-		per_page: 20
 	},
 	stateParams = {
 		apikey: apiKey
 	},
 	containerNode = document.querySelector('#container')
+
+var stateQuery = function(stateInput){
+    console.log(stateUrlRoot)
+    legislatorParams.state = stateInput
+    // build the urls we need
+    var legislatorsUrlFull = legislatorsUrlRoot + genParamString(legislatorParams)
+    var stateUrlFull = stateUrlRoot + stateInput + '/' + genParamString(stateParams)
+    // request data from each url, store the promises that are returned
+    var legislatorPromise = $.getJSON(legislatorsUrlFull)
+    var statePromise = $.getJSON(stateUrlFull)
+    // hand our functions over to the promise objects, so they
+    // can be invoked when the data is ready.
+    statePromise.then(stateDataHandler)
+    legislatorPromise.then(legislatorDataHandler)
+
+}
 
 
 var genParamString = function(paramObject) {
@@ -29,18 +43,13 @@ var genParamString = function(paramObject) {
     return outputString.substr(0,outputString.length - 1)
 }
 
-// build the urls we need
-var legislatorsUrlFull = legislatorsUrlRoot + genParamString(legislatorParams)
-var stateUrlFull = stateUrlRoot + genParamString(stateParams)
 
-// request data from each url, store the promises that are returned
-var legislatorPromise = $.getJSON(legislatorsUrlFull)
-var statePromise = $.getJSON(stateUrlFull)
+
 
 
 // define functions that will handle the data when it's ready. note that
 // each of these functions takes a response object as input. that's because
-// when the promise object invokes them, it will pass as input the response 
+// when the promise object invokes them, it will pass as input the response
 // to our request.
 var stateDataHandler = function(responseObject) {
 	console.log('eyyyy we got some state data!!!')
@@ -59,6 +68,7 @@ var stateDataHandler = function(responseObject) {
 	// write it into the container
 	var leftContainer = document.querySelector("#leftCol")
 	leftContainer.innerHTML = htmlString
+
 }
 
 var legislatorDataHandler = function(legislatorsArray) {
@@ -87,11 +97,27 @@ var legislatorDataHandler = function(legislatorsArray) {
 		htmlCards += '</div>'
 	}
 	var rightContainer = document.querySelector('#rightCol')
-	rightContainer.innerHTML += htmlCards
+	rightContainer.innerHTML = htmlCards
 }
 
-// hand our functions over to the promise objects, so they 
-// can be invoked when the data is ready.
-statePromise.then(stateDataHandler)
-legislatorPromise.then(legislatorDataHandler)
+
+
+var searchBar = document.querySelector('input')
+
+var searchFunction = function(eventObj) {
+    // if enter is pressed
+    if(eventObj.keyCode === 13){
+        //extract value that user typed
+        var inputElement = eventObj.target
+        var inputValue = inputElement.value
+        //make custom query using inputValue
+        stateQuery(inputValue)
+        inputElement.value = ""
+    }
+}
+
+searchBar.addEventListener('keydown', searchFunction)
+
+
+
 
